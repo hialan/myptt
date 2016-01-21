@@ -46,6 +46,9 @@ function process_input($buf) {
 			$bin = pack('C*', $ch1, $ch2);
 			$utf8 = iconv(REMOTE_ENCODING, LOCAL_ENCODING, $bin);
 			$result .= $utf8;
+			if(!empty($control)) {
+				$result .= $control;
+			}
 		} else if($state == 'esc') {
 			if($c == ord('m') || $c == ord('K') || $c == ord('H')) {
 				$state = 'text';
@@ -76,18 +79,16 @@ $data = $client->exec('n');
 echo process_input($data);
 sleep(1);
 
-$data = $client->exec('F');
-echo process_input($data);
+$data = $client->exec('sGossiping');
+$screen = process_input($data);
+echo $screen;
 sleep(1);
 
+if(mb_strpos($screen, '請按任意鍵繼續')) {
+	$data = $client->exec('');
+	$screen = process_input($data);
+	echo $screen;
+	sleep(1);
+}
 
-$data = $client->exec("8\r");
-echo process_input($data);
-sleep(1);
-
-//error_log('==========> start here' . PHP_EOL, 3, './log.txt');
-$data = $client->exec(" ");
-// $bytes = unpack('C*', $buf);
-echo process_input($data);
-sleep(1);
-
+$client->disconnect();
