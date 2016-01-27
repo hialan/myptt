@@ -1,5 +1,7 @@
 <?php
 require_once 'Telnet.class.php';
+require_once 'ByteStream.inc';
+require_once 'Term.inc';
 
 $config = parse_ini_file("config.ini", true);
 $config = $config['global'];
@@ -8,55 +10,51 @@ define('REMOTE_ENCODING', 'BIG5');
 define('LOCAL_ENCODING', 'UTF-8');
 define('ESC', chr(27));
 
+$term = new TermBuf(80, 24);
 
 function process_input($buf) {
-	$bytes = unpack('C*', $buf);
-	$length = count($bytes);
+    $byteStream = new ByteStream($buf);
 	$result = '';	
 	$state = 'text';
-	$ch1 = '';
-	$ch2 = '';
-	for($i = 1;$i<=$length;$i++) {
-		$c = $bytes[$i];
+    while(!$byteStream->eof()) {
+        $c = $byteStream->getc();
 		if($state == 'text') {
-			if($c == 27) { 
+			if($c->isEsc()) {
 				$state = 'esc';
-				$result .= chr($c);
-				//error_log(PHP_EOL . chr($c), 3, './log.txt');
-			} else if ($c >= 129 && $c <= 254) {
+				$result .= $c->getChar();
+			} else if ($c->isBig5FirstByte()){
 				$state = 'chinese';
 				$ch1 = $c;
 			} else {
-				$result .= chr($c);
+				$result .= $c->getChar();
 			}
 		} else if($state == 'chinese') {
 			$control = '';
-			if($c == 27) {
-				while(chr($c) != 'm') {
-					$control .= chr($c);
-					$i++ ;
-					$c = $bytes[$i];
+			if($c->isEsc()) {
+				while($c->getChar() != 'm') {
+					$control .= $c->getChar();
+					$c = $byteStream->getc();
 				}
-				$control .= chr($c);
-				$i++;
-				$c = $bytes[$i];
+				$control .= $c->getChar();
+				$c = $byteStream->getc();
 			}
 			$state = 'text';
 			$ch2 = $c;
-			$bin = pack('C*', $ch1, $ch2);
-			$utf8 = iconv(REMOTE_ENCODING, LOCAL_ENCODING, $bin);
+			$utf8 = $ch1->toChinese($ch2->getByte());
 			$result .= $utf8;
 			if(!empty($control)) {
 				$result .= $control;
 			}
 		} else if($state == 'esc') {
-			if($c == ord('m') || $c == ord('K') || $c == ord('H')) {
+            $b = $c->getByte();
+			if($b == ord('m') || $b == ord('K') || $b == ord('H')) {
 				$state = 'text';
 			}
 			//error_log(chr($c), 3, './log.txt');
-			$result .= chr($c);
+			$result .= $c->getChar();
 		}
-	}
+    }
+
 	return $result;
 }
 
@@ -75,9 +73,13 @@ $data = $client->exec('');
 echo process_input($data);
 sleep(1);
 
+//return;
+
+/*
 $data = $client->exec('n');
 echo process_input($data);
 sleep(1);
+*/
 
 $data = $client->exec('sGossiping');
 $screen = process_input($data);
@@ -90,5 +92,9 @@ if(mb_strpos($screen, '請按任意鍵繼續')) {
 	echo $screen;
 	sleep(1);
 }
+
+$data = $client->exec('Z100');
+echo process_input($data);
+sleep(1);
 
 $client->disconnect();
