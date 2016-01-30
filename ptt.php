@@ -139,6 +139,12 @@ for($i = $start; $i <= $end; $i++) {
     $client->exec(' ', false);
 }
 
+// exit ptt
+
+$client->exec(TermInput::KEY_LEFT . TermInput::KEY_LEFT . TermInput::KEY_LEFT . TermInput::KEY_LEFT, true);
+$client->exec('y');
+echo $client->getScreen();
+
 $client->disconnect();
 
 print_r($result);
