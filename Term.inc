@@ -7,28 +7,49 @@ class TermChar {
     public function isChinese() {
         return (strlen($this->ch) == mb_strlen($this->ch));
     }
+
+    public function copyFrom(TermChar $termChar) {
+        $this->ch = $termChar->ch;
+    }
 }
 
 class TermBuf {
-    private $cols, $rows;
+    public $cols, $rows;
 
-    private $cur_x = 0;
-    private $cur_y = 0;
-    private $cur_x_sav = -1;
-    private $cur_y_sav = -1;
-    private $scrollStart = 0;
-    private $scrollEnd;
+    public $cur_x = 0;
+    public $cur_y = 0;
+    public $cur_x_sav = -1;
+    public $cur_y_sav = -1;
+    public $scrollStart = 0;
+    public $scrollEnd;
 
     private $lines= array();
+    private $newChar;
 
     public function __construct($cols, $rows) {
         $this->cols = $cols;
         $this->rows = $rows;
         $this->scrollEnd = $rows - 1;
+        $this->newChar = new TermChar(' ');
 
         for($j=0;$j<$rows;$j++){
             $this->lines[] = $this->getEmptyLine();
         }
+    }
+
+    public function show() {
+        $screen = '';
+        for($i=0;$i<$this->rows;$i++) {
+           $line = '';
+
+           for($j=0;$j<$this->cols;$j++) {
+               $line .= $this->lines[$i][$j]->ch;
+           }
+
+           $line = iconv('BIG5', 'UTF-8', $line);
+           $screen .= $line.PHP_EOL;
+        }
+        return $screen;
     }
 
     private function getEmptyLine() {
@@ -37,6 +58,14 @@ class TermBuf {
             $line[] = new TermChar('');
         }
         return $line;
+    }
+
+    public function puts($data) {
+        $n = strlen($data);
+        for($i = 0;$i < $n ;$i++) {
+            $ch = $data[$i];
+            $this->putc($ch);
+        }
     }
 
     public function putc($ch) {
@@ -62,18 +91,21 @@ class TermBuf {
         }
 
         switch($ch) {
-            case "\t": 
+            case "\t":
                 $this->tab();
                 return;
             default:
+                //echo "[{$this->cur_y}, {$this->cur_x}]\n";
                 $line = $this->lines[$this->cur_y];
                 $line[$this->cur_x]->ch = $ch;
-                $isChinese = $line[$this->cur_x]->isChinese();
                 $this->cur_x++;
+                /*
+                $isChinese = $line[$this->cur_x]->isChinese();
                 if($isChinese && $this->cur_x < $this->cols) {
                     $line[$this->cur_x]->ch = '';
                     $this->cur_x++;
                 }
+                */
                 $this->lines[$this->cur_y] = $line;
                 break;
         }
@@ -88,6 +120,30 @@ class TermBuf {
 
         $this->cur_x = $x;
         $this->cur_y = $y;
+    }
+
+    public function eraseLine($param) {
+        $line =& $this->lines[$this->cur_y];
+        switch($param) {
+            case 0: // erase to right
+                for($col = $this->cur_x; $col < $this->cols; $col++) {
+                    $line[$col]->copyFrom($this->newChar);
+                }
+                break;
+            case 1: // erase to left
+                for($col = 0; $col < $this->cur_x; $col++) {
+                    $line[$col]->copyFrom($this->newChar);
+                }
+                break;
+            case 2: // erase all
+                for($col = 0;$col < $this->cols; $col++) {
+                    $line[$col]->copyFrom($this->newChar);
+                }
+                break;
+            default:
+                break;
+        }
+        return;
     }
 
     public function deleteLine($param) {
@@ -109,7 +165,7 @@ class TermBuf {
     public function scroll($up, $n) {
         $scrollStart = $this->scrollStart;
         $scrollEnd = $this->scrollEnd;
-        
+
         if($scrollEnd <= $scrollStart) {
             $scrollStart = 0;
             if($scrollEnd < 1) $scrollEnd = $this->rows - 1;
@@ -123,7 +179,7 @@ class TermBuf {
             }
         } else {
             if($up == true) {
-                
+
             } else {
                 for($i=0;$i<$scrollStart;$i++) {
                     $this->lines[] = array_shift($this->lines);
@@ -166,6 +222,44 @@ class TermBuf {
         } else {
             $this->scroll(false, 1);
         }
+    }
+
+    public function clear($param) {
+        switch($param) {
+            case 0:
+                $line =& $this->lines[$this->cur_y];
+                for($col = $this->cur_x; $col < $this->cols; $col++) {
+                    $line[$col]->copyFrom($this->newChar);
+                }
+                for($row = $this->cur_y; $row < $this->rows; $row++) {
+                    $line =& $this->lines[$row];
+                    for($col = 0;$col < $this->cols; $col++) {
+                        $line[$col]->copyFrom($this->newChar);
+                    }
+                }
+                break;
+            case 1:
+                for($row = 0;$row < $this->cur_y;$row++) {
+                    $line =& $this->lines[$row];
+                    for($col = 0;$col < $this->cols;$col++) {
+                        $line[$col].copyFrom($this->newChar);
+                    }
+                }
+                $line =& $this->lines[$this->cur_y];
+                for($col=0;$col<$this->cur_x;$col++) {
+                    $line[$col].copyFrom($this->newChar);
+                }
+                break;
+            case 2:
+                for($row = 0;$row < $this->rows;$row++) {
+                    $line =& $this->lines[$row];
+                    for($col = 0;$col < $this->cols;$col++) {
+                        $line[$col].copyFrom($this->newChar);
+                    }
+                }
+                break;
+        }
+        $this->gotoPos(0, 0);
     }
 }
 ?>
