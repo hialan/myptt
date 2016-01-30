@@ -1,3 +1,4 @@
 [global]
 user = "username"
 password = "password"
+slack_webhook = "your-slack-webhook"

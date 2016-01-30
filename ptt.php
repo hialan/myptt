@@ -104,7 +104,7 @@ $pos = $client->getCurrentPos();
 $parsedData = parse_line($lines[$pos['cur_y']]);
 
 $end = $parsedData['number'];
-$start = $end - 20;
+$start = $end - 10;
 
 echo "fetch article from {$start} to {$end}\n";
 
@@ -133,7 +133,7 @@ for($i = $start; $i <= $end; $i++) {
     print_r($merged);
 
     $result[] = $merged;
-    sleep(1);
+//    sleep(1);
     
     // exit detail status
     $client->exec(' ', false);
@@ -147,5 +147,70 @@ echo $client->getScreen();
 
 $client->disconnect();
 
-print_r($result);
+/// insert db
+$db = new SQLite3('articles.sqlite');
+$db->exec('CREATE TABLE IF NOT EXISTS articles (hashid TEXT PRIMARY KEY, board TEXT, date TEXT, author TEXT, title TEXT, url TEXT)');
 
+$stmt_select = $db->prepare('SELECT * FROM articles WHERE hashid = :hashid;');
+
+$new_articles = [];
+foreach($result as $article) {
+    $hash = $article['hash'];
+    $stmt_select->bindValue(':hashid', $hash);
+    $result = $stmt_select->execute();
+    $row = $result->fetchArray();
+    $result->finalize();
+
+    if($row === false && !isset($new_articles[$hash])) {
+        $new_articles[$hash] = $article;
+    }
+
+}
+
+$stmt_select->close();
+
+if( count($new_articles) > 0) {
+    $stmt_insert = $db->prepare('INSERT INTO articles (hashid, board, date, author, title, url) VALUES (:hashid, :board, :date, :author, :title, :url)');
+
+    $db->exec('BEGIN');
+    foreach($new_articles as $article) {
+        $stmt_insert->clear();
+        $stmt_insert->bindValue(':hashid', $article['hash']);
+        $stmt_insert->bindValue(':board',  $article['board']);
+        $stmt_insert->bindValue(':date',   $article['date']);
+        $stmt_insert->bindValue(':author', $article['author']);
+        $stmt_insert->bindValue(':title', $article['title']);
+        $stmt_insert->bindValue(':url', $article['title']);
+
+        $stmt_insert->execute();
+    }
+    $db->exec('COMMIT');
+    $stmt_insert->close();
+}
+
+
+///// Slack
+function http_post($url, $data) {
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_HEADER, 0);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+    $out = curl_exec($ch);
+    curl_close($ch);
+    return $out;
+}
+
+if( count($new_articles) > 0) {
+    $slack_url = $config['slack_webhook'];
+    foreach($new_articles as $article) {
+        $data = [
+            'text' => "[PTT爆掛] {$article['date']} {$article['author']} <{$article['url']}|{$article['title']}> ({$article['board']} {$article['hash']})"
+        ];
+        $post_data['payload'] = json_encode($data);
+        $resp = http_post($slack_url, $post_data);
+        echo "Slack send: {$article['title']}\n";
+        print_r($resp);
+    }
+}
