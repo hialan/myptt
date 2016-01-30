@@ -1,6 +1,5 @@
 <?php
 require_once 'Telnet.class.php';
-require_once 'ByteStream.inc';
 require_once 'Term.inc';
 require_once 'ansi_parser.inc';
 

@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/Client.inc';
+require_once __DIR__ . '/src/Client.inc';
 
 $config = parse_ini_file("config.ini", true);
 $config = $config['global'];
