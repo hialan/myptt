@@ -22,6 +22,13 @@ class Client {
     public function getScreen() {
         return $this->term->show();
     }
+
+    public function getCurrentPos() {
+        return [
+            "cur_x" => $this->term->cur_x,
+            "cur_y" => $this->term->cur_y,
+        ];
+    }
     
     public function disconnect() {
         return $this->telnet->disconnect();

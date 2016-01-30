@@ -1,4 +1,14 @@
 <?php
+class TermInput {
+    const KEY_UP="\x1b[A";
+    const KEY_DOWN="\x1b[B";
+    const KEY_LEFT="\x1b[D";
+    const KEY_RIGHT="\x1b[C";
+
+    const KEY_HOME="\x1b[1~";
+    const KEY_END="\x1b[4~";
+}
+
 class TermChar {
     public $ch;
     public function __construct($char) {
