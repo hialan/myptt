@@ -55,7 +55,7 @@ class TermBuf {
     private function getEmptyLine() {
         $line = array();
         for($i=0;$i<$this->cols;$i++) {
-            $line[] = new TermChar('');
+            $line[] = new TermChar(' ');
         }
         return $line;
     }
@@ -70,6 +70,10 @@ class TermBuf {
 
     public function putc($ch) {
         switch($ch) {
+            case "\x07":
+                // FIXME: beep (1)Sound (2)AlertNotification (3)change icon
+                error_log('[BEEP!]');
+                continue;
             case "\b":
                 $this->back();
                 return;
@@ -96,7 +100,7 @@ class TermBuf {
                 return;
             default:
                 //echo "[{$this->cur_y}, {$this->cur_x}]\n";
-                $line = $this->lines[$this->cur_y];
+                $line =& $this->lines[$this->cur_y];
                 $line[$this->cur_x]->ch = $ch;
                 $this->cur_x++;
                 /*
@@ -106,7 +110,6 @@ class TermBuf {
                     $this->cur_x++;
                 }
                 */
-                $this->lines[$this->cur_y] = $line;
                 break;
         }
     }
@@ -178,15 +181,28 @@ class TermBuf {
                 $this->lines[$row] = $this->getEmptyLine();
             }
         } else {
-            if($up == true) {
-
-            } else {
+            if($up == true) {  // move lines down
+                for($i=0;$i < $this->rows-1-scrollEnd;$i++) {
+                    $line = array_pop($this->lines);
+                    array_unshift($this->lines, $line);
+                }
+                while( ($n - 1) >= 0) {
+                    $n--;
+                    $line = array_pop($this->lines);
+                    $line = $this->getEmptyLine();
+                    array_splice($this->lines, $this->rows - 1 - $scrollEnd + $scrollStart, 0, $line);
+                }
+                for($i=0;$i<$this->rows-1-$scrollEnd; $i++) {
+                    $line = array_shift($this->lines);
+                    $this->lines[] = $line;
+                }
+            } else { // move lines up
                 for($i=0;$i<$scrollStart;$i++) {
                     $this->lines[] = array_shift($this->lines);
                 }
                 while(--$n >= 0) {
                     array_shift($this->lines);
-                    $line =  $this->getEmptyLine();
+                    $line = $this->getEmptyLine();
                     array_splice($this->lines, $scrollEnd - $scrollStart, 0, $line);
                 }
                 for($i=0;$i<$scrollStart;$i++) {
@@ -231,7 +247,7 @@ class TermBuf {
                 for($col = $this->cur_x; $col < $this->cols; $col++) {
                     $line[$col]->copyFrom($this->newChar);
                 }
-                for($row = $this->cur_y; $row < $this->rows; $row++) {
+                for($row = $this->cur_y + 1; $row < $this->rows; $row++) {
                     $line =& $this->lines[$row];
                     for($col = 0;$col < $this->cols; $col++) {
                         $line[$col]->copyFrom($this->newChar);

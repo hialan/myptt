@@ -60,31 +60,31 @@ class ansi_parser {
                                 $this->term->insert($params[0]>0 ? $params[0] :1);
                                 break;
                             case 'A':
-                                $this->term->gotoPos($this->term->cur_x, $this->term->cur_y-(empty($params[0])?$params[0]:1));
+                                $this->term->gotoPos($this->term->cur_x, $this->term->cur_y-(!empty($params[0])?$params[0]:1));
                                 break;
                             case 'B':
                             case 'e':
-                                $this->term->gotoPos($this->term->cur_x, $this->term->cur_y+(empty($params[0])?$params[0]:1));
+                                $this->term->gotoPos($this->term->cur_x, $this->term->cur_y+(!empty($params[0])?$params[0]:1));
                                 break;
                             case 'C':
                             case 'e':
-                                $this->term->gotoPos($this->term->cur_x+(empty($params[0])?$params[0]:1), $this->term->cur_y);
+                                $this->term->gotoPos($this->term->cur_x+(!empty($params[0])?$params[0]:1), $this->term->cur_y);
                                 break;
                             case 'D':
-                                $this->term->gotoPos($this->term->cur_x-(empty($params[0])?$params[0]:1), $this->term->cur_y);
+                                $this->term->gotoPos($this->term->cur_x-(!empty($params[0])?$params[0]:1), $this->term->cur_y);
                                 break;
                             case 'E':
-                                $this->term->gotoPos(0, $this->term->cur_y+(empty($params[0])?$params[0]:1));
+                                $this->term->gotoPos(0, $this->term->cur_y+(!empty($params[0])?$params[0]:1));
                                 break;
                             case 'F':
-                                $this->term->gotoPos(0, $this->term->cur_y-(empty($params[0])?$params[0]:1));
+                                $this->term->gotoPos(0, $this->term->cur_y-(!empty($params[0])?$params[0]:1));
                                 break;
                             case 'G':
                             case '`':
                                 $this->term->gotoPos($params[0]>0?$params[0]-1:0 , $this->term->cur_y);
                                 break;
                             case 'I':
-                                $this->term->tab($params[0]?$params[0]:1);
+                                $this->term->tab(!empty($params[0])?$params[0]:1);
                                 break;
                             case 'd':
                                 $this->term->gotoPos($this->term->cur_x, $params[0]>0?$params[0]-1:0);

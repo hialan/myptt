@@ -364,22 +364,22 @@ class Telnet {
 		if ($c != $this->IAC) {
 			if (($c == $this->DO) || ($c == $this->DONT)) {
 				$opt = $this->getc();
-error_log( ($c == $this->DO ? 'DO' : 'DONT') . ' ' . ord($opt) );
+//error_log( ($c == $this->DO ? 'DO' : 'DONT') . ' ' . ord($opt) );
 				if($opt == $this->TERM_TYPE) {
-error_log( 'I WILL ' . ord($opt));
+//error_log( 'I WILL ' . ord($opt));
 					fwrite($this->socket, $this->IAC . $this->WILL . $opt);
 				} else {
-error_log( 'I WONT ' . ord($opt));
+//error_log( 'I WONT ' . ord($opt));
 					fwrite($this->socket, $this->IAC . $this->WONT . $opt);
 				}
 			} else if (($c == $this->WILL) || ($c == $this->WONT)) {
 				$opt = $this->getc();
-error_log( ($c == $this->WILL ? 'WILL' : 'WONT') . ' ' . ord($opt) );
+//error_log( ($c == $this->WILL ? 'WILL' : 'WONT') . ' ' . ord($opt) );
 				if($opt == $this->ECHO || $opt == $this->GO_AHEAD) {
-error_log( 'I DO ' . ord($opt));
+//error_log( 'I DO ' . ord($opt));
 					fwrite($this->socket, $this->IAC . $this->DO . $opt);
 				} else {
-error_log( 'I DONT ' . ord($opt));
+//error_log( 'I DONT ' . ord($opt));
 					fwrite($this->socket, $this->IAC . $this->DONT . $opt);
 				}
 			} else if ($c == $this->SB) {

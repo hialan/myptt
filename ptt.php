@@ -37,4 +37,8 @@ $client->exec('Z100');
 echo $client->getScreen();
 sleep(1);
 
+$client->exec('Q', false);
+echo $client->getScreen();
+sleep(1);
+
 $client->disconnect();
