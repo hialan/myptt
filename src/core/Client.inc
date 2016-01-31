@@ -19,8 +19,8 @@ class Client {
         $this->parser->feed($data);
     }
 
-    public function getCurrentLine() {
-        return $this->term->getCurrentLine();
+    public function getTerm() {
+        return $this->term;
     }
 
     public function getScreen() {

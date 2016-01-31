@@ -2,3 +2,16 @@
 user = "username"
 password = "password"
 slack_webhook = "your-slack-webhook"
+
+; use , to separate different boards
+boards = "Gossiping,Tech_Job"
+
+; the setting for board 'Gossiping'
+[board.Gossiping]
+min_push_count = 80
+get_count = 10
+
+; the setting for board 'Tech_Job'
+[board.Tech_Job]
+min_push_count = 10
+get_count = 10

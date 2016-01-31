@@ -47,29 +47,30 @@ class TermBuf {
         }
     }
 
+    public function getLine($row) {
+        $line = '';
+        for($i=0;$i<$this->cols;$i++) {
+            $line .= $this->lines[$row][$i]->ch;
+        }
+        $line = iconv('BIG5', 'UTF-8', $line);
+        return $line;
+    }
+
     public function show() {
         $screen = '';
         for($i=0;$i<$this->rows;$i++) {
-           $line = '';
-
-           for($j=0;$j<$this->cols;$j++) {
-               $line .= $this->lines[$i][$j]->ch;
-           }
-
-           $line = iconv('BIG5', 'UTF-8', $line);
+           $line = $this->getLine($i);
            $screen .= $line.PHP_EOL;
         }
         return $screen;
     }
 
     public function getCurrentLine() {
-        $line = '';
-        $row = $this->cur_y;
-        for($i=0;$i<$this->cols;$i++) {
-            $line .= $this->lines[$row][$i]->ch;
-        }
-        $line = iconv('BIG5', 'UTF-8', $line);
-        return $line;
+        return $this->getLine($this->cur_y);
+    }
+
+    public function getLastLine() {
+        return $this->getLine($this->rows - 1);
     }
 
     private function getEmptyLine() {

@@ -1,5 +1,25 @@
 <?php
+require_once __DIR__ . '/../core/Term.inc';
+
 class ptt_helper {
+    private $client;
+
+    public function __construct($client) {
+        $this->client = $client;
+    }
+
+    public function login($user, $password) {
+        $this->client->exec('', false);
+        echo $this->client->getScreen();
+
+        $this->client->exec($user);
+        $this->client->exec($password);
+
+        echo $this->client->getScreen();
+
+        return ;
+    }
+
     private function my_substr($line, &$i, $count) {
         $str = mb_substr($line, $i, $count);
         $i += $count;
@@ -58,22 +78,22 @@ class ptt_helper {
         ];
     }
 
-    public function parse_board_article_list($client, $start, $end) {
+    public function parse_board_article_list($start, $end) {
         echo "fetch article from {$start} to {$end}\n";
 
         $result = [];
         for($i = $end; $i >= $start; $i--) {
-            $client->exec(strval($i), true);
+            $this->client->exec(strval($i), true);
 
-            $line = $client->getCurrentLine();
+            $line = $this->client->getTerm()->getCurrentLine();
             $parsedData = $this->parse_line($line);
 
             if($parsedData['author'] === '-' || empty($parsedData['title'])) {
                 continue;
             }
 
-            $client->exec('Q', false);
-            $screen = $client->getScreen();
+            $this->client->exec('Q', false);
+            $screen = $this->client->getScreen();
             $article_info = $this->parse_article_url($screen);
 
             $merged = array_merge($parsedData, $article_info);
@@ -84,9 +104,58 @@ class ptt_helper {
             $result[] = $merged;
             
             // exit detail status
-            $client->exec(' ', false);
+            $this->client->exec(' ', false);
         }
         return $result;
+    }
+
+    public function parse_board_by_push_count($board, $min_push_count, $get_count = 10) {
+        $this->enter_board($board);
+        echo $this->client->getScreen();
+
+        $this->client->exec('Z' . $min_push_count);
+        echo $this->client->getScreen();
+
+        // find latest post
+        $this->client->exec(TermInput::KEY_END, false);
+        $line = $this->client->getTerm()->getCurrentLine();
+
+        // get article numbe in the list
+        $parsedData = $this->parse_line($line);
+
+        $end = $parsedData['number'];
+        $start = $end - $get_count;
+
+        return $this->parse_board_article_list($start, $end);
+    }
+
+    public function is_anykey_continue() {
+        $line = $this->client->getTerm()->getLastLine();
+        if(mb_strpos($line, '請按任意鍵繼續')) {
+            return true;
+        }
+        return false;
+    }
+
+    public function goto_main_menu() {
+        while(mb_substr($this->client->getTerm()->getLine(0), 1, 4) != '主功能表' || $this->is_anykey_continue()) {
+            $this->client->exec(TermInput::KEY_LEFT, false);
+        }
+    }
+
+    public function enter_board($board) {
+        $this->goto_main_menu();
+
+        $this->client->exec('s' . $board, true);
+        if($this->is_anykey_continue()) {
+            $this->client->exec(' ', false);
+        }
+    }
+
+    public function exitbbs() {
+        $this->goto_main_menu();
+        $this->client->exec('g', true);
+        $this->client->exec('y', true);
     }
 }
 ?>
