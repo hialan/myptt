@@ -119,7 +119,7 @@ for($i = $start; $i <= $end; $i++) {
     $line = $lines[$pos['cur_y']];
     $parsedData = parse_line($line);
 
-    if($parsedData['author'] === '-' || empty($parsedData['board'])) {
+    if($parsedData['author'] === '-' || empty($parsedData['title'])) {
         continue;
     }
 
