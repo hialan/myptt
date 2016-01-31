@@ -1,5 +1,8 @@
 <?php
+require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/src/Client.inc';
+
+use Carbon\Carbon;
 
 function my_substr($line, &$i, $count) {
     $str = mb_substr($line, $i, $count);
@@ -59,6 +62,37 @@ function parse_article_url($screen) {
     ];
 }
 
+function parse_board_article_list($client, $start, $end) {
+    echo "fetch article from {$start} to {$end}\n";
+
+    $result = [];
+    for($i = $end; $i >= $start; $i--) {
+        $client->exec(strval($i), true);
+
+        $line = $client->getCurrentLine();
+        $parsedData = parse_line($line);
+
+        if($parsedData['author'] === '-' || empty($parsedData['title'])) {
+            continue;
+        }
+
+        $client->exec('Q', false);
+        $screen = $client->getScreen();
+        $article_info = parse_article_url($screen);
+
+        $merged = array_merge($parsedData, $article_info);
+
+        echo $line . PHP_EOL;
+        print_r($merged);
+
+        $result[] = $merged;
+        
+        // exit detail status
+        $client->exec(' ', false);
+    }
+    return $result;
+}
+
 $config = parse_ini_file("config.ini", true);
 $config = $config['global'];
 
@@ -103,35 +137,7 @@ $parsedData = parse_line($line);
 $end = $parsedData['number'];
 $start = $end - 10;
 
-echo "fetch article from {$start} to {$end}\n";
-
-$result = [];
-
-for($i = $start; $i <= $end; $i++) {
-    $client->exec(strval($i), true);
-
-    $line = $client->getCurrentLine();
-    $parsedData = parse_line($line);
-
-    if($parsedData['author'] === '-' || empty($parsedData['title'])) {
-        continue;
-    }
-
-    $client->exec('Q', false);
-    $screen = $client->getScreen();
-    $article_info = parse_article_url($screen);
-
-    $merged = array_merge($parsedData, $article_info);
-
-    echo $line . PHP_EOL;
-    print_r($merged);
-
-    $result[] = $merged;
-//    sleep(1);
-    
-    // exit detail status
-    $client->exec(' ', false);
-}
+$result = parse_board_article_list($client, $start, $end);
 
 // exit ptt
 
@@ -143,11 +149,28 @@ $client->disconnect();
 
 /// insert db
 $db = new SQLite3('articles.sqlite');
-$db->exec('CREATE TABLE IF NOT EXISTS articles (hashid TEXT PRIMARY KEY, board TEXT, date TEXT, author TEXT, title TEXT, url TEXT)');
+
+$sql_create =<<<EOT
+CREATE TABLE IF NOT EXISTS articles (
+    hashid TEXT PRIMARY KEY, 
+    board TEXT, 
+    date TEXT, 
+    author TEXT, 
+    title TEXT, 
+    url TEXT, 
+    push_number TEXT, 
+    created_time TEXT, 
+    updated_time TEXT
+)
+EOT;
+
+$db->exec($sql_create);
 
 $stmt_select = $db->prepare('SELECT * FROM articles WHERE hashid = :hashid;');
 
 $new_articles = [];
+$update_articles = [];
+
 foreach($result as $article) {
     $hash = $article['hash'];
     $stmt_select->bindValue(':hashid', $hash);
@@ -157,30 +180,60 @@ foreach($result as $article) {
 
     if($row === false && !isset($new_articles[$hash])) {
         $new_articles[$hash] = $article;
+    } else if(isset($row['push_number']) && $article['push_number'] == '爆' && $row['push_number'] != $article['push_number']) {
+        $update_articles[$hash] = $article;
     }
-
 }
 
 $stmt_select->close();
 
 if( count($new_articles) > 0) {
-    $stmt_insert = $db->prepare('INSERT INTO articles (hashid, board, date, author, title, url) VALUES (:hashid, :board, :date, :author, :title, :url)');
+    $now = Carbon::now();
 
     $db->exec('BEGIN');
-    foreach($new_articles as $article) {
-        $stmt_insert->clear();
-        $stmt_insert->bindValue(':hashid', $article['hash']);
-        $stmt_insert->bindValue(':board',  $article['board']);
-        $stmt_insert->bindValue(':date',   $article['date']);
-        $stmt_insert->bindValue(':author', $article['author']);
-        $stmt_insert->bindValue(':title', $article['title']);
-        $stmt_insert->bindValue(':url', $article['title']);
-
-        $stmt_insert->execute();
+    if(count($new_articles) > 0) {
+        $stmt_insert = $db->prepare(
+            'INSERT INTO articles (hashid, board, date, author, title, url, push_number, updated_time, created_time) ' . 
+            'VALUES (:hashid, :board, :date, :author, :title, :url, :push_number, :updated_time, :created_time)');
+        foreach($new_articles as $article) {
+            $stmt_insert->clear();
+            $stmt_insert->bindValue(':hashid', $article['hash']);
+            $stmt_insert->bindValue(':board',  $article['board']);
+            $stmt_insert->bindValue(':date',   $article['date']);
+            $stmt_insert->bindValue(':author', $article['author']);
+            $stmt_insert->bindValue(':title', $article['title']);
+            $stmt_insert->bindValue(':url', $article['title']);
+            $stmt_insert->bindValue(':push_number', $article['push_number']);
+            $stmt_insert->bindValue(':updated_time', $now->toIso8601String());
+            $stmt_insert->bindValue(':created_time', $now->toIso8601String());
+            $stmt_insert->execute();
+        }
+        $stmt_insert->close();
     }
+
+    if(count($update_articles) > 0) {
+        $stmt_update = $db->prepare(
+            'UPDATE articles SET title=:title, url=:url, push_number=:push_number, updated_time=:updated_time ' . 
+            'WHERE hashid=:hashid');
+        foreach($new_articles as $article) {
+            $stmt_update->clear();
+            $stmt_update->bindValue(':title', $article['title']);
+            $stmt_update->bindValue(':url', $article['title']);
+            $stmt_update->bindValue(':push_number', $article['push_number']);
+            $stmt_update->bindValue(':updated_time', $now->toIso8601String());
+            $stmt_update->bindValue(':hashid', $article['hash']);
+            $stmt_update->execute();
+        }
+        $stmt_insert->close();
+    }
+
     $db->exec('COMMIT');
-    $stmt_insert->close();
 }
+
+echo 'new' . PHP_EOL;
+print_r($new_articles);
+echo 'update ' . PHP_EOL;
+print_r($update_articles);
 
 ///// Slack
 function http_post($url, $data) {
@@ -195,7 +248,7 @@ function http_post($url, $data) {
     return $out;
 }
 
-if( count($new_articles) > 0) {
+if( !empty($config['slack_webhook']) && count($new_articles) > 0) {
     $slack_url = $config['slack_webhook'];
     foreach($new_articles as $article) {
         $data = [
