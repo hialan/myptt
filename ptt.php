@@ -202,7 +202,7 @@ if( count($new_articles) > 0) {
             $stmt_insert->bindValue(':date',   $article['date']);
             $stmt_insert->bindValue(':author', $article['author']);
             $stmt_insert->bindValue(':title', $article['title']);
-            $stmt_insert->bindValue(':url', $article['title']);
+            $stmt_insert->bindValue(':url', $article['url']);
             $stmt_insert->bindValue(':push_number', $article['push_number']);
             $stmt_insert->bindValue(':updated_time', $now->toIso8601String());
             $stmt_insert->bindValue(':created_time', $now->toIso8601String());
@@ -218,7 +218,7 @@ if( count($new_articles) > 0) {
         foreach($update_articles as $article) {
             $stmt_update->clear();
             $stmt_update->bindValue(':title', $article['title']);
-            $stmt_update->bindValue(':url', $article['title']);
+            $stmt_update->bindValue(':url', $article['url']);
             $stmt_update->bindValue(':push_number', $article['push_number']);
             $stmt_update->bindValue(':updated_time', $now->toIso8601String());
             $stmt_update->bindValue(':hashid', $article['hash']);
