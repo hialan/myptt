@@ -89,7 +89,7 @@ EOT;
             $stmt_update = $this->db->prepare(
                 'UPDATE articles SET title=:title, url=:url, push_number=:push_number, updated_time=:updated_time ' . 
                 'WHERE hashid=:hashid');
-            foreach($update_articles as $article) {
+            foreach($articles as $article) {
                 $stmt_update->clear();
                 $stmt_update->bindValue(':title', $article['title']);
                 $stmt_update->bindValue(':url', $article['url']);
