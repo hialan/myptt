@@ -62,6 +62,16 @@ class TermBuf {
         return $screen;
     }
 
+    public function getCurrentLine() {
+        $line = '';
+        $row = $this->cur_y;
+        for($i=0;$i<$this->cols;$i++) {
+            $line .= $this->lines[$row][$i]->ch;
+        }
+        $line = iconv('BIG5', 'UTF-8', $line);
+        return $line;
+    }
+
     private function getEmptyLine() {
         $line = array();
         for($i=0;$i<$this->cols;$i++) {

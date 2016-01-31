@@ -95,13 +95,10 @@ echo $client->getScreen();
 
 // find latest post
 $client->exec(TermInput::KEY_END, false);
-$screen = $client->getScreen();
-
-$lines = explode(PHP_EOL, $screen);
-$pos = $client->getCurrentPos();
+$line = $client->getCurrentLine();
 
 // get article numbe in the list
-$parsedData = parse_line($lines[$pos['cur_y']]);
+$parsedData = parse_line($line);
 
 $end = $parsedData['number'];
 $start = $end - 10;
@@ -113,10 +110,7 @@ $result = [];
 for($i = $start; $i <= $end; $i++) {
     $client->exec(strval($i), true);
 
-    $screen = $client->getScreen();
-    $lines = explode(PHP_EOL, $screen);
-    $pos = $client->getCurrentPos();
-    $line = $lines[$pos['cur_y']];
+    $line = $client->getCurrentLine();
     $parsedData = parse_line($line);
 
     if($parsedData['author'] === '-' || empty($parsedData['title'])) {
