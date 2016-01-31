@@ -90,7 +90,7 @@ if(mb_strpos($screen, '請按任意鍵繼續')) {
 }
 
 
-$client->exec('Z100');
+$client->exec('Z80');
 echo $client->getScreen();
 
 // find latest post
@@ -119,7 +119,7 @@ for($i = $start; $i <= $end; $i++) {
     $line = $lines[$pos['cur_y']];
     $parsedData = parse_line($line);
 
-    if($parsedData['author'] === '-') {
+    if($parsedData['author'] === '-' || empty($parsedData['board'])) {
         continue;
     }
 
@@ -188,7 +188,6 @@ if( count($new_articles) > 0) {
     $stmt_insert->close();
 }
 
-
 ///// Slack
 function http_post($url, $data) {
     $ch = curl_init();
@@ -206,7 +205,8 @@ if( count($new_articles) > 0) {
     $slack_url = $config['slack_webhook'];
     foreach($new_articles as $article) {
         $data = [
-            'text' => "[PTT爆掛] {$article['date']} {$article['author']} <{$article['url']}|{$article['title']}> ({$article['board']} {$article['hash']})"
+            'username' => 'Ptt 爆掛 Bot',
+            'text' => "`{$article['push_number']}` {$article['date']} {$article['author']} <{$article['url']}|{$article['title']}> ({$article['board']} {$article['hash']})",
         ];
         $post_data['payload'] = json_encode($data);
         $resp = http_post($slack_url, $post_data);
