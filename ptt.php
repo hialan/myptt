@@ -215,7 +215,7 @@ if( count($new_articles) > 0) {
         $stmt_update = $db->prepare(
             'UPDATE articles SET title=:title, url=:url, push_number=:push_number, updated_time=:updated_time ' . 
             'WHERE hashid=:hashid');
-        foreach($new_articles as $article) {
+        foreach($update_articles as $article) {
             $stmt_update->clear();
             $stmt_update->bindValue(':title', $article['title']);
             $stmt_update->bindValue(':url', $article['title']);
@@ -224,7 +224,7 @@ if( count($new_articles) > 0) {
             $stmt_update->bindValue(':hashid', $article['hash']);
             $stmt_update->execute();
         }
-        $stmt_insert->close();
+        $stmt_update->close();
     }
 
     $db->exec('COMMIT');
@@ -248,16 +248,32 @@ function http_post($url, $data) {
     return $out;
 }
 
+function getSlackPayload($article) {
+    $data = [
+        'username' => 'Ptt 爆掛 Bot',
+        'text' => "`{$article['push_number']}` {$article['date']} {$article['author']} <{$article['url']}|{$article['title']}> ({$article['board']} {$article['hash']})",
+    ];
+    return $data;
+}
+
 if( !empty($config['slack_webhook']) && count($new_articles) > 0) {
     $slack_url = $config['slack_webhook'];
-    foreach($new_articles as $article) {
-        $data = [
-            'username' => 'Ptt 爆掛 Bot',
-            'text' => "`{$article['push_number']}` {$article['date']} {$article['author']} <{$article['url']}|{$article['title']}> ({$article['board']} {$article['hash']})",
-        ];
-        $post_data['payload'] = json_encode($data);
-        $resp = http_post($slack_url, $post_data);
-        echo "Slack send: {$article['title']}\n";
-        print_r($resp);
+
+    if(count($new_articles) > 0) {
+        foreach($new_articles as $article) {
+            $data = getSlackPayload($article);
+            $post_data['payload'] = json_encode($data);
+            $resp = http_post($slack_url, $post_data);
+            echo "Slack send: {$article['title']} ==> " . print_r($resp, true) . "\n";
+        }
+    }
+
+    if(count($update_articles) > 0) {
+        foreach($update_articles as $article) {
+            $data = getSlackPayload($article);
+            $post_data['payload'] = json_encode($data);
+            $resp = http_post($slack_url, $post_data);
+            echo "Slack send: {$article['title']} ==> " . print_r($resp, true) . "\n";
+        }
     }
 }
