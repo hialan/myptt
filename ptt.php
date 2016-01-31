@@ -22,7 +22,7 @@ $config = load_config();
 $slack = null;
 if(!empty($config['global']['slack_webhook'])) {
     $slack_url = $config['global']['slack_webhook'];
-    $slack = new notify_slack($slack_uri);
+    $slack = new notify_slack($slack_url);
 }
 
 $client = new Client('ptt.cc', 23);

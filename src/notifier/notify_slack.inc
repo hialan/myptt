@@ -1,9 +1,9 @@
 <?php
 
 class notify_slack {
-    private $slack_webhook_uri = '';
+    private $slack_webhook_url = '';
     public function __construct($slack_webhook_uri) {
-        $this->slack_webhook_uri = $slack_webhook_uri;
+        $this->slack_webhook_url = $slack_webhook_uri;
     }
 
     ///// Slack
@@ -31,7 +31,7 @@ class notify_slack {
         foreach($articles as $article) {
             $data = $this->getSlackPayload($article);
             $post_data['payload'] = json_encode($data);
-            $resp = $this->http_post($slack_url, $post_data);
+            $resp = $this->http_post($this->slack_webhook_url, $post_data);
             echo "Slack send: {$article['title']} ==> " . print_r($resp, true) . "\n";
         }
     }
