@@ -88,7 +88,7 @@ class ptt_helper {
             $line = $this->client->getTerm()->getCurrentLine();
             $parsedData = $this->parse_line($line);
 
-            if($parsedData['author'] === '-' || empty($parsedData['title'])) {
+            if($parsedData['author'] === '-' || empty($parsedData['title']) || empty($parsedData['url'])) {
                 continue;
             }
 
