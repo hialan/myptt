@@ -35,6 +35,15 @@ class notify_slack {
             echo "Slack send: {$article['title']} ==> " . print_r($resp, true) . "\n";
         }
     }
+
+    public function send($msg) {
+        $data = [
+            'username' => 'Ptt 爆掛 Bot',
+            'text' => $msg
+        ];
+        $post_data['payload'] = json_encode($data);
+        $resp = $this->http_post($this->slack_webhook_url, $post_data);
+    }
 }
 
 ?>

@@ -19,12 +19,6 @@ function load_config() {
 
 $config = load_config();
 
-$slack = null;
-if(!empty($config['global']['slack_webhook'])) {
-    $slack_url = $config['global']['slack_webhook'];
-    $slack = new notify_slack($slack_url);
-}
-
 $client = new Client('ptt.cc', 23);
 $helper = new ptt_helper($client);
 $db = new storage_sqlite();
@@ -42,6 +36,7 @@ sleep(1);
 foreach($config['boards'] as $board => $setting) {
     $min_push_count = $setting['min_push_count'];
     $get_count = $setting['get_count'];
+    $slack_url = $setting['slack_webhook'];
 
     echo "\n===> Process board {$board} min_push_count({$min_push_count}) get_count({$get_count})\n\n";
 
@@ -54,7 +49,8 @@ foreach($config['boards'] as $board => $setting) {
     print_r($update_articles);
 
     ///// Slack
-    if(!is_null($slack)) {
+    if(!empty($slack_url)) {
+        $slack = new notify_slack($slack_url);
         $articles = array_merge($new_articles, $update_articles);
         if(count($articles) > 0) {
             $slack->notify($articles);
@@ -68,3 +64,9 @@ echo $client->getScreen();
 
 $client->disconnect();
 
+/// slack push done
+if(!empty($config['global']['slack_webhook'])) {
+    $slack = new notify_slack($config['global']['slack_webhook']);
+    $msg = sprintf("[%s] done", date("D M j G:i:s T Y"));
+    $slack->send($msg);
+}
