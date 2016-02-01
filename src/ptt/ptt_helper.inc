@@ -88,7 +88,7 @@ class ptt_helper {
             $line = $this->client->getTerm()->getCurrentLine();
             $parsedData = $this->parse_line($line);
 
-            if($parsedData['author'] === '-' || empty($parsedData['title']) || empty($parsedData['url'])) {
+            if($parsedData['author'] === '-' || empty($parsedData['title'])) {
                 continue;
             }
 
@@ -96,15 +96,20 @@ class ptt_helper {
             $screen = $this->client->getScreen();
             $article_info = $this->parse_article_url($screen);
 
+            // exit detail status
+            $this->client->exec(' ', false);
+
+	    //// apprnd data
             $merged = array_merge($parsedData, $article_info);
+
+	    if(empty($merged['url'])) {
+		continue;
+	    }
+
+            $result[] = $merged;
 
             echo $line . PHP_EOL;
             print_r($merged);
-
-            $result[] = $merged;
-            
-            // exit detail status
-            $this->client->exec(' ', false);
         }
         return $result;
     }
