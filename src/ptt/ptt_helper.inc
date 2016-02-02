@@ -99,12 +99,12 @@ class ptt_helper {
             // exit detail status
             $this->client->exec(' ', false);
 
-	    //// apprnd data
+            //// apprnd data
             $merged = array_merge($parsedData, $article_info);
 
-	    if(empty($merged['url'])) {
-		continue;
-	    }
+            if(empty($merged['url'])) {
+                continue;
+            }
 
             $result[] = $merged;
 
@@ -115,10 +115,36 @@ class ptt_helper {
     }
 
     public function parse_board_by_push_count($board, $min_push_count, $get_count = 10) {
+
+        echo "\n===> Process board {$board} min_push_count({$min_push_count}) get_count({$get_count})\n\n";
+
         $this->enter_board($board);
         echo $this->client->getScreen();
 
         $this->client->exec('Z' . $min_push_count);
+        echo $this->client->getScreen();
+
+        // find latest post
+        $this->client->exec(TermInput::KEY_END, false);
+        $line = $this->client->getTerm()->getCurrentLine();
+
+        // get article numbe in the list
+        $parsedData = $this->parse_line($line);
+
+        $end = $parsedData['number'];
+        $start = $end - $get_count;
+
+        return $this->parse_board_article_list($start, $end);
+    }
+
+    public function parse_board_by_keyword($board, $keyword, $get_count=10) {
+
+        echo "\n===> Process board {$board} keyword({$keyword}) get_count({$get_count})\n\n";
+
+        $this->enter_board($board);
+        echo $this->client->getScreen();
+
+        $this->client->exec('/' . $keyword);
         echo $this->client->getScreen();
 
         // find latest post

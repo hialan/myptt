@@ -48,13 +48,19 @@ sleep(1);
 
 foreach($config['tasks'] as $setting) {
     $board = $setting['board'];
-    $min_push_count = $setting['min_push_count'];
+    $min_push_count = isset($setting['min_push_count']) ? trim($setting['min_push_count']) : null;
+    $keyword = isset($setting['keyword']) ? trim($setting['keyword']) : null;
     $get_count = $setting['get_count'];
     $slack_url = $setting['slack'];
 
-    echo "\n===> Process board {$board} min_push_count({$min_push_count}) get_count({$get_count})\n\n";
-
-    $result = $helper->parse_board_by_push_count($board, $min_push_count, $get_count);
+    $result = null;
+    if(!is_null($min_push_count) && !empty($min_push_count)) {
+        $result = $helper->parse_board_by_push_count($board, $min_push_count, $get_count);
+    } else if(!is_null($keyword) && !empty($keyword)) {
+        $result = $helper->parse_board_by_keyword($board, $keyword, $get_count);
+    } else {
+        continue;
+    }
     list($new_articles, $update_articles) = $db->process_result($result);
 
     echo 'new' . PHP_EOL;
