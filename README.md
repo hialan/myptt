@@ -7,8 +7,29 @@ prepare config.ini
 
 ```
 [global]
-user = "your-user-name-to-login"
-password = "your-password-to-login"
+user = "login-user-name"
+password = "login-password"
+
+[slack]
+; slack webhook
+; https://slack.com/apps/A0F7XDUAZ-incoming-webhooks
+test-channel="your-slack-webhook1"
+test-channel-2="your-slack-webhook2"
+channel-name="your-slack-webhook3"
+
+
+; task # from 1 ~ n
+[task.1]
+board=Gossiping
+min_push_count = 80
+get_count = 3
+slack=test-channel
+
+[task.2]
+board=Tech_Job
+min_push_count = 10
+get_count = 3
+slack=test-channel
 ```
 
 and run
