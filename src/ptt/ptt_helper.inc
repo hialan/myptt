@@ -111,7 +111,7 @@ class ptt_helper {
             echo $line . PHP_EOL;
             print_r($merged);
         }
-        return $result;
+        return array_reverse($result);
     }
 
     public function parse_board_by_push_count($board, $min_push_count, $get_count = 10) {
