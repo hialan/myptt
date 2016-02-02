@@ -137,6 +137,10 @@ class ptt_helper {
         return $this->parse_board_article_list($start, $end);
     }
 
+    private function toBig5($str) {
+        return iconv('UTF-8', 'BIG5', $str);
+    }
+
     public function parse_board_by_keyword($board, $keyword, $get_count=10) {
 
         echo "\n===> Process board {$board} keyword({$keyword}) get_count({$get_count})\n\n";
@@ -144,7 +148,7 @@ class ptt_helper {
         $this->enter_board($board);
         echo $this->client->getScreen();
 
-        $this->client->exec('/' . $keyword);
+        $this->client->exec('/' . $this->toBig5($keyword));
         echo $this->client->getScreen();
 
         // find latest post
