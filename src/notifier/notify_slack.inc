@@ -20,6 +20,10 @@ class notify_slack {
     }
 
     private function getSlackPayload($article) {
+        $article['push_number'] = trim($article['push_number']);
+        if(empty($article['push_number'])) {
+            $article['push_number'] = 0;
+        }
         $data = [
             'username' => 'Ptt 爆掛 Bot',
             'text' => "`{$article['push_number']}` {$article['date']} {$article['author']} <{$article['url']}|{$article['title']}> ({$article['board']} {$article['hash']})",
