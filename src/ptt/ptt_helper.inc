@@ -152,6 +152,12 @@ class ptt_helper {
         $this->goto_main_menu();
 
         $this->client->exec('s' . $board, true);
+
+		$line = $this->client->getTerm()->getLastLine();
+		if(mb_strpos($line, '>>> 動畫播放中... 可按 q, Ctrl-C 或其它任意鍵停止')) {
+            $this->client->exec(' ', false);
+		}
+
         if($this->is_anykey_continue()) {
             $this->client->exec(' ', false);
         }
