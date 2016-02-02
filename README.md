@@ -1,5 +1,17 @@
 # BBS parser
 
+
+## Dependency
+
+* php > 5.6
+* [composer](https://getcomposer.org/)
+
+## Installation
+
+```
+$ composer install
+```
+
 ## Usage
 
 prepare config.ini
