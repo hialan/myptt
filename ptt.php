@@ -9,11 +9,24 @@ function load_config() {
     $config = [];
     $ini = parse_ini_file("config.ini", true);
     $config['global'] = $ini['global'];
+    $config['slack'] = $ini['slack'];
+    $config['tasks'] = [];
+    
+    $slack = $ini['slack'];
+    for($i=1; isset($ini['task.' . $i]); $i++) {
+        $task = $ini['task.' . $i];
 
-    $boards = explode(',', $ini['global']['boards']);
-    foreach($boards as $board) {
-        $config['boards'][$board] = $ini['board.' . $board];
+        if(isset($task['slack'])){
+            if (isset($slack[$task['slack']])) {
+                $task['slack'] = $slack[$task['slack']];
+            } else {
+                unset($task['slack']);
+            }
+        }
+
+       $config['tasks'][] = $task;
     }
+
     return $config;
 }
 
@@ -33,10 +46,11 @@ sleep(1);
 
 //// start parse board
 
-foreach($config['boards'] as $board => $setting) {
+foreach($config['tasks'] as $setting) {
+    $board = $setting['board'];
     $min_push_count = $setting['min_push_count'];
     $get_count = $setting['get_count'];
-    $slack_url = $setting['slack_webhook'];
+    $slack_url = $setting['slack'];
 
     echo "\n===> Process board {$board} min_push_count({$min_push_count}) get_count({$get_count})\n\n";
 
@@ -65,8 +79,9 @@ echo $client->getScreen();
 $client->disconnect();
 
 /// slack push done
-if(!empty($config['global']['slack_webhook'])) {
-    $slack = new notify_slack($config['global']['slack_webhook']);
+if(!empty($config['slack']['bot-stat'])) {
+    $slack_uri = $config['slack']['bot-stat'];
+    $slack = new notify_slack($slack_uri);
     $msg = sprintf("[%s] done", date("D M j G:i:s T Y"));
     $slack->send($msg);
 }
